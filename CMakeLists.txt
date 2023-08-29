@@ -95,7 +95,11 @@ SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD ${NDICAPI_CXX_STANDARD
 IF(NOT WIN32)
   SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fPIC")
 ENDIF()
-target_include_directories(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC  
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include/>
+)
 
 IF(MSVC)
   target_link_libraries(${PROJECT_NAME} PUBLIC wsock32 ws2_32)
@@ -150,3 +154,33 @@ CONFIGURE_FILE(ndicapiExport.h.in
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
 export(PACKAGE ndicapi)
+
+# ----------------------------------------
+# Install tree targets export
+# ----------------------------------------
+include(CMakePackageConfigHelpers)
+
+set(cmake_install_dir lib/cmake)
+set(ndicapi_INSTALL_TARGETS_FILE ndicapiTargets.cmake)
+
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/ndicapiConfigInstall.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/install/ndicapiConfig.cmake
+  INSTALL_DESTINATION ${cmake_install_dir}
+)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/install/ndicapiConfigVersion.cmake
+  VERSION ${ndicapi_VERSION}
+  COMPATIBILITY AnyNewerVersion)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/install/ndicapiConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/install/ndicapiConfigVersion.cmake
+    DESTINATION ${cmake_install_dir}
+)
+
+install(EXPORT ${_targets}
+  FILE ${ndicapi_INSTALL_TARGETS_FILE}
+  DESTINATION ${cmake_install_dir}
+)
